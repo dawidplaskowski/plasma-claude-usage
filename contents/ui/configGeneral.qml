@@ -8,7 +8,7 @@ import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import org.kde.kcmutils as KCM
-import org.kde.plasma.plasma5support as Plasma5Support
+import QtQuick.LocalStorage
 import org.kde.iconthemes as KIconThemes
 
 KCM.SimpleKCM {
@@ -130,28 +130,26 @@ KCM.SimpleKCM {
         cfg_showModelLimits = list.join(",")
     }
 
-    Plasma5Support.DataSource {
-        id: cacheReader
-        engine: "executable"
-        connectedSources: []
-
-        onNewData: function(sourceName, data) {
-            var stdout = (data["stdout"] || "").trim()
-            disconnectSource(sourceName)
-            if (stdout.length > 10) {
+    // Model labels from the widget's cache (see cacheDb() in main.qml), merged
+    // over all instances. The cache stores each model under "label".
+    function loadModels() {
+        var names = []
+        var db = LocalStorage.openDatabaseSync("ClaudeUsageCache", "", "Claude Usage cache", 1000000)
+        db.transaction(function(tx) {
+            tx.executeSql("CREATE TABLE IF NOT EXISTS cache(key TEXT PRIMARY KEY, json TEXT)")
+            var rows = tx.executeSql("SELECT json FROM cache").rows
+            for (var r = 0; r < rows.length; r++) {
                 try {
-                    var cache = JSON.parse(stdout)
-                    var models = cache.modelLimits || []
-                    var names = []
+                    var models = JSON.parse(rows.item(r).json).modelLimits || []
                     for (var i = 0; i < models.length; i++) {
-                        if (models[i].name) names.push(models[i].name)
+                        if (models[i].label && names.indexOf(models[i].label) < 0) names.push(models[i].label)
                     }
-                    if (names.length > 0) configPage.availableModels = names
                 } catch (e) {
                     console.log("Config: Cache parse error:", e)
                 }
             }
-        }
+        })
+        availableModels = names
     }
 
     function updateQuickLink(index, field, value) {
@@ -185,7 +183,7 @@ KCM.SimpleKCM {
     ]
 
     Component.onCompleted: {
-        cacheReader.connectSource("cat $HOME/.local/share/claude-usage-cache.json 2>/dev/null")
+        loadModels()
         try { quickLinksModel = JSON.parse(cfg_quickLinks || "[]") }
         catch (e) { quickLinksModel = [] }
         try { cardOrderModel = JSON.parse(cfg_cardOrder || "[]") }
