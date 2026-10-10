@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.3] - 2026-10-10
+
+### Fixed
+
+- plasmashell memory no longer grows by several MB on every refresh. Plasma's `executable` engine keeps every command it has ever run for as long as it stays loaded, and the cache was written as `echo '<json>' > file`, so each refresh left the whole cache JSON (7 days of trend samples included) behind in memory. The cache now lives in LocalStorage (`~/.local/share/plasmashell/QML/OfflineStorage`); the old cache file is read once after upgrading
+
 ## [2.4.2] - 2026-10-10
 
 ### Fixed
