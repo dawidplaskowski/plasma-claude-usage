@@ -143,46 +143,46 @@ PlasmoidItem {
     }
 
     function applyCache(stdout) {
-    if (stdout.length > 10) {
-        try {
-            var cache = JSON.parse(stdout)
-            var age = Date.now() - (cache.timestamp || 0)
-            if (age < 86400000) {
-                root.sessionUsagePercent = cache.session || 0
-                root.weeklyUsagePercent = cache.weekly || 0
-                root.sonnetWeeklyPercent = cache.sonnet || 0
-                root.opusWeeklyPercent = cache.opus || 0
-                root.hasSonnetData = cache.hasSonnet || false
-                root.hasOpusData = cache.hasOpus || false
-                if (cache.modelLimits) {
-                    root.modelLimits = cache.modelLimits
+        if (stdout.length > 10) {
+            try {
+                var cache = JSON.parse(stdout)
+                var age = Date.now() - (cache.timestamp || 0)
+                if (age < 86400000) {
+                    root.sessionUsagePercent = cache.session || 0
+                    root.weeklyUsagePercent = cache.weekly || 0
+                    root.sonnetWeeklyPercent = cache.sonnet || 0
+                    root.opusWeeklyPercent = cache.opus || 0
+                    root.hasSonnetData = cache.hasSonnet || false
+                    root.hasOpusData = cache.hasOpus || false
+                    if (cache.modelLimits) {
+                        root.modelLimits = cache.modelLimits
+                    } else {
+                        var legacyLimits = []
+                        if (cache.hasSonnet) legacyLimits.push({ label: "Sonnet", percent: cache.sonnet || 0 })
+                        if (cache.hasOpus) legacyLimits.push({ label: "Opus", percent: cache.opus || 0 })
+                        root.modelLimits = legacyLimits
+                    }
+                    root.modelUsage = cache.models || []
+                    root.usageSamples = cache.samples || []
+                    root.extraEnabled = cache.extraEnabled || false
+                    root.extraUsedCents = cache.extraUsed || 0
+                    root.extraLimitCents = cache.extraLimit || 0
+                    root.planName = cache.plan || ""
+                    root.sessionReset = cache.sessionReset || ""
+                    root.weeklyReset = cache.weeklyReset || ""
+                    root.sessionResetTime = cache.sessionResetTs ? new Date(cache.sessionResetTs) : null
+                    root.weeklyResetTime = cache.weeklyResetTs ? new Date(cache.weeklyResetTs) : null
+                    root.lastSuccessTime = cache.timestamp
+                    root.lastUpdate = Qt.formatTime(new Date(cache.timestamp), "hh:mm:ss") + " *"
+                    root.isStale = age > root.staleThresholdMs
+                    console.log("Claude Usage: Loaded cache, age:", Math.round(age/60000), "min, stale:", root.isStale)
                 } else {
-                    var legacyLimits = []
-                    if (cache.hasSonnet) legacyLimits.push({ label: "Sonnet", percent: cache.sonnet || 0 })
-                    if (cache.hasOpus) legacyLimits.push({ label: "Opus", percent: cache.opus || 0 })
-                    root.modelLimits = legacyLimits
+                    console.log("Claude Usage: Cache too old, ignoring")
                 }
-                root.modelUsage = cache.models || []
-                root.usageSamples = cache.samples || []
-                root.extraEnabled = cache.extraEnabled || false
-                root.extraUsedCents = cache.extraUsed || 0
-                root.extraLimitCents = cache.extraLimit || 0
-                root.planName = cache.plan || ""
-                root.sessionReset = cache.sessionReset || ""
-                root.weeklyReset = cache.weeklyReset || ""
-                root.sessionResetTime = cache.sessionResetTs ? new Date(cache.sessionResetTs) : null
-                root.weeklyResetTime = cache.weeklyResetTs ? new Date(cache.weeklyResetTs) : null
-                root.lastSuccessTime = cache.timestamp
-                root.lastUpdate = Qt.formatTime(new Date(cache.timestamp), "hh:mm:ss") + " *"
-                root.isStale = age > root.staleThresholdMs
-                console.log("Claude Usage: Loaded cache, age:", Math.round(age/60000), "min, stale:", root.isStale)
-            } else {
-                console.log("Claude Usage: Cache too old, ignoring")
+            } catch (e) {
+                console.log("Claude Usage: Cache parse error:", e)
             }
-        } catch (e) {
-            console.log("Claude Usage: Cache parse error:", e)
         }
-    }
     }
 
     function saveCache() {
